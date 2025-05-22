@@ -10,12 +10,13 @@ def load_data():
     url = "https://docs.google.com/spreadsheets/d/1gxiQhl4sKKQtlSqJvDZ5qE9WC1MGab6zDmJ88Y0me_0/export?format=csv&id=1gxiQhl4sKKQtlSqJvDZ5qE9WC1MGab6zDmJ88Y0me_0"
     df = pd.read_csv(url, dtype=str)  # force all as strings
     df = df.applymap(lambda x: str(x).strip() if pd.notnull(x) else "")
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')  # convert timestamp
     return df
 
 df = load_data()
 
 # --- Normalize Key Columns ---
-df['Phone Number'] = df['Phone Number'].str.replace(r'\D', '', regex=True)  # digits only
+df['Phone Number'] = df['Phone Number'].str.replace(r'\D', '', regex=True)
 df['WHAT IS YOUR NATIONAL ID?'] = df['WHAT IS YOUR NATIONAL ID?'].str.strip()
 
 # --- Title ---
@@ -51,12 +52,19 @@ selected_counties = st.sidebar.multiselect("Select Counties", options=county_opt
 selected_sector = st.sidebar.selectbox("Sector", options=["All"] + sorted(df['WHAT IS THE MAIN INDUSTRY SECTOR IN WHICH YOU OPERATE IN?'].dropna().unique()))
 selected_gender = st.sidebar.selectbox("Gender", options=["All", "Male", "Female"])
 
+# Date Range Filter
+st.sidebar.markdown("### 🗓️ Date Range Filter")
+min_date = df['Timestamp'].min()
+max_date = df['Timestamp'].max()
+start_date, end_date = st.sidebar.date_input("Filter by Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+
 # --- Apply Filters ---
 filtered = df[df['County'].isin(selected_counties)]
 if selected_sector != "All":
     filtered = filtered[filtered['WHAT IS THE MAIN INDUSTRY SECTOR IN WHICH YOU OPERATE IN?'] == selected_sector]
 if selected_gender != "All":
     filtered = filtered[filtered['Gender'].str.lower() == selected_gender.lower()]
+filtered = filtered[(filtered['Timestamp'] >= pd.to_datetime(start_date)) & (filtered['Timestamp'] <= pd.to_datetime(end_date))]
 
 # --- Show Filtered Table ---
 st.markdown(f"### 👥 Filtered Participants: {len(filtered)}")
@@ -89,6 +97,17 @@ with st.expander("📋 Registration Status"):
         color='IS YOUR BUSINESS REGISTERED?:N'
     )
     st.altair_chart(reg_chart, use_container_width=True)
+
+with st.expander("📅 Registrations Over Time"):
+    daily = filtered.copy()
+    daily['Date'] = daily['Timestamp'].dt.date
+    daily_count = daily.groupby('Date').size().reset_index(name='Registrations')
+    date_chart = alt.Chart(daily_count).mark_line(point=True).encode(
+        x='Date:T',
+        y='Registrations:Q',
+        tooltip=['Date:T', 'Registrations']
+    ).properties(height=300)
+    st.altair_chart(date_chart, use_container_width=True)
 
 # --- Export ---
 csv = filtered.to_csv(index=False).encode("utf-8")
