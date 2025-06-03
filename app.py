@@ -20,6 +20,28 @@ df = load_data()
 df['Phone Number'] = df['Phone Number'].str.replace(r'\D', '', regex=True)
 df['WHAT IS YOUR NATIONAL ID?'] = df['WHAT IS YOUR NATIONAL ID?'].str.strip()
 
+# --- Standardize County Names ---
+county_corrections = {
+    'homabay': 'Homa Bay',
+    'homa bay': 'Homa Bay',
+    'elgeyomarakwet': 'Elgeyo-Marakwet',
+    'elgeyo marakwet': 'Elgeyo-Marakwet',
+    'elgeyo-marakwet': 'Elgeyo-Marakwet',
+    'nairobi city': 'Nairobi',
+    'trans nzoia': 'Trans Nzoia',
+    'uasin gishu': 'Uasin Gishu',
+    'mombasa county': 'Mombasa',
+    'kitui county': 'Kitui',
+    'kisumu county': 'Kisumu',
+    'kisii county': 'Kisii',
+    'nyamira county': 'Nyamira',
+    'kajiado county': 'Kajiado',
+    'embu county': 'Embu',
+    # Add more as needed
+}
+df['County'] = df['County'].str.strip().str.lower().replace(county_corrections)
+df['County'] = df['County'].str.title()
+
 # === Diagnostic Outputs (Optional) ===
 st.sidebar.markdown("### 🧪 Data Diagnostics")
 st.sidebar.write(f"Total raw rows: {len(df)}")
