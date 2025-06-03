@@ -42,7 +42,19 @@ county_corrections = {
 df['County'] = df['County'].str.strip().str.lower().replace(county_corrections)
 df['County'] = df['County'].str.title()
 
-# === Diagnostic Outputs (Optional) ===
+# Lock to official 47 counties
+valid_counties = [
+    'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo',
+    'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale',
+    'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa', 'Murang\'a',
+    'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya', 'Taita Taveta',
+    'Tana River', 'Tharaka Nithi', 'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
+]
+
+# Keep only rows with valid counties
+df = df[df['County'].isin(valid_counties)]
+
+# === Diagnostic Outputs ===
 st.sidebar.markdown("### 🧪 Data Diagnostics")
 st.sidebar.write(f"Total raw rows: {len(df)}")
 st.sidebar.write(f"Missing timestamps: {df['Timestamp'].isna().sum()}")
@@ -69,7 +81,7 @@ elif search_phone:
 
 # === Sidebar Filters ===
 st.sidebar.header("🎛️ Filter Participants")
-counties = sorted(df['County'].dropna().unique())
+counties = sorted(df['County'].unique())
 selected_counties = st.sidebar.multiselect("Select Counties", counties, default=counties)
 
 # Date Range
